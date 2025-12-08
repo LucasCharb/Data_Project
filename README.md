@@ -11,7 +11,7 @@ This dataset is made of 297 tweets and 4263 comments/reply tweets, for a total o
 
 The reply tweets include responsetype-vs-source and responsetype-vs-previous describing the nature of a reply (e.g., comment, agreed, disagreed, or appeal-for-more-information). This dataset is designed for studying rumor verification, stance detection, and information credibility across social media discussions.
 
-Concerning the metadata on disinformation, there are the columns is_rumour (rumour or non-rumour), category (the topic of the tweet), misinformation (0 if the topic was later proven true, 1 if it was misinformation), and links (?).
+Concerning the metadata on disinformation, there are the columns is_rumour (rumour or non-rumour), category (the topic of the tweet), misinformation (0 if the topic was later proven true, 1 if it was misinformation), and links (a list of links/url that covered the topic).
 An example of an entry :
 <img width="1082" height="211" alt="image" src="https://github.com/user-attachments/assets/a18215b3-9bc5-49ac-8209-c397023eff64" />
 
@@ -57,10 +57,23 @@ DistilBERT fine-tuned (Hugging Face)
 
 We can see that the results don't change much between the models but change between the reprsentations. So the text representation matter more here than the model choice.
 
-Word2Vec is the worst representation in our case, maybe because it can't take into account the negations (it can't tell the difference between "rumour" and "non rumour" for example).
+Word2Vec is the worst representation in our case, maybe because it can't take into account word-order information like the negations (it can't tell the difference between "rumour" and "non rumour" for example).
 
-Then, surprisingly the TF-IDF representation has better results than the BERT one and even better than the fine-tuning one. In the TF-IDF representation, words that are frequent in a tweet but rare in the general dataset are given a high weight. So, this representation captures discriminating words (hashtags, proper names, ...) well, even if it ignores context. In this dataset the tweets that support a story (category) have most of the time hashtags or names in common. So when the category is proven to be misinformation, the discriminating words are the most helpful to categorize the tweets.
+Then, surprisingly the TF-IDF representation has better results than the BERT one and even better than the fine-tuning one. In the TF-IDF representation, words that are frequent in a tweet but rare in the general dataset are given a high weight. So, this representation captures discriminating words (hashtags, proper names, ...) well, even if it ignores context. In this dataset the tweets that support a story (category) have most of the time hashtags or names in common. So when the category is proven to be misinformation, the discriminating words are the most helpful to categorize the tweets. Looking at the stance, the propotion of replies deniying a tweet can help improve the performance. Indeed, when a tweet is misinformative the proportion of denying replies quadruples.
+
+So, our chosen representation is TF-IDF and for our classification we choose the Logistic Regression, to use less computation power.
 
 # Extension Work :
 
+After the surprising performance of the TF-IDF representation, we thought of building a simple model classifying the tweets as misinformative if they contained too much words associated with the “misinformative lexicon”. So, we created lists of words related to misinformation, and lists of links associated to unreliable websites. Then, if the tweet contains words from those lists a penalty is added and when the total score exceeds a predetermined threshold, the tweet is classified as disinformation. This strategy will help to determined to what extend this “misinformative lexicon” is the key to identify misinformative tweets.
+We obtain the following results :
+<img width="945" height="469" alt="image" src="https://github.com/user-attachments/assets/d96250f7-ef7a-4deb-b1eb-1b514363b3c8" />
+
+Those results are quite solid for a rule-based classifier. Moreover, the dataset is imbalanced and noisy, so those results demonstrate that this rule is a good way to figure out if a tweet is misinformation or not.
+
+The model mostly classify the tweet as misinformation or not according to the reliability of the links and not as much according to the lexicon. This is also our reflex as humans, to determine if a news is trustworthy we look for the sources. So it’s a good indicator, although the results are still lower than for most of the models trained before. Supervised learning stays the best way to predict data patterns.
+
+
 # Conclusions :
+
+links between polarization and misinformation
