@@ -28,21 +28,21 @@ Our initial hypothesis is that misinformative tweets are related to a more extre
 # 2.	Text Vector Representations :
 We split the data into Train/Val/Test (70/15/15), and compared three strategies :
 
- •	TF-IDF (Scikit-learn)
+ •	TF-IDF (Scikit-learn) : mesure the importance of a word by how often it appear (TF = Term Frequency = how often a word appears in a document, IDF = Inverse Document Frequency = how rare the word is across all documents). The main advantage of this representation is that it is simple and fast.
 
- •	Word2Vec (Gensim)
+ •	Word2Vec (Gensim) : words that appear in similar contexts get similar vectors. The main benefit is that it captures semantic meaning and analogies.
 
- •	DistilBERT (contextual embeddings, Hugging Face Transformers)
+ •	DistilBERT (contextual embeddings, Hugging Face Transformers) : it uses a transformer model to produce contextual embeddings. So, the meaning of a word depends on the sentence around it. The advantage is that it captures both syntax and semantics but it is heavier to run.
 
 # 3.	Models and evaluation :
 
 We implemented and compared, with each of the three representations, the following models :
 
- •	Linear SVM (LinearSVC)
+ •	Linear SVM (LinearSVC) : finds a "line" that best separates classes
  
- •	Logistic Regression (Scikit-learn)
+ •	Logistic Regression (Scikit-learn) : estimates the probability that an input belongs to a class, using the logistic function. It is less heavy to run than the other models.
  
- •	MLP (PyTorch)
+ •	MLP (PyTorch) : it is a feedforward neural network. It has nonlinear activations to learn complex patterns. It's a more flexible model, it can capture complex patterns but needs more data and tuning.
 
 We used accuracy_score and f1_score to evaluate our models.
 Results :
@@ -52,8 +52,11 @@ The results appear to be correct, with values around 0.7-0.8 for the accuracy_sc
 
 # 4.	Hyperparameter tuning and model selection :
 
-DistilBERT fine-tuned (Hugging Face)
+DistilBERT fine-tuned (Hugging Face) : it is a transformer model trained on large text corpora, then fine‑tuned for a specific task, here classify misinformation. It understand the context deeply and the fine tuning adapt the model to the specific task and to the dataset. It's a more complex model that has a heavy computational cost.
  <img width="1527" height="761" alt="image" src="https://github.com/user-attachments/assets/495b6166-040b-4304-9aa9-1c45e621da17" />
+
+ <img width="1189" height="590" alt="image" src="https://github.com/user-attachments/assets/930fe0db-9f83-40ec-8060-5fe723669c65" />
+
 
 We can see that the results don't change much between the models but change between the reprsentations. So the text representation matter more here than the model choice.
 
@@ -61,7 +64,7 @@ Word2Vec is the worst representation in our case, maybe because it can't take in
 
 Then, surprisingly the TF-IDF representation has better results than the BERT one and even better than the fine-tuning one. In the TF-IDF representation, words that are frequent in a tweet but rare in the general dataset are given a high weight. So, this representation captures discriminating words (hashtags, proper names, ...) well, even if it ignores context. In this dataset the tweets that support a story (category) have most of the time hashtags or names in common. So when the category is proven to be misinformation, the discriminating words are the most helpful to categorize the tweets. Looking at the stance, the propotion of replies deniying a tweet can help improve the performance. Indeed, when a tweet is misinformative the proportion of denying replies quadruples.
 
-So, our chosen representation is TF-IDF and for our classification we choose the Logistic Regression, to use less computation power.
+So, our chosen representation is **TF-IDF** and for our classification we choose the **MLP**, because it has a slightly better f1-score.
 
 # Extension Work :
 
