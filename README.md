@@ -1,9 +1,9 @@
 # Data_Project
 # Analysis of Ideological Polarization and Disinformation on Social Networks
 
-Team members :
+Team members : *Inès Menchero Garcia, Patricia Lidia Sanchez Rodriguez, Lucas Charbonnier, Ambre Bissiriex.*
 
-The objective of this project is first to detect potential misinformation by training on the “PHEME Rumour and Stance Classification Dataset”. Then we will link this disinformation with the political party of the tweet’s writer by using our pretrained model on the “POLITiCES 2023: Analysis of political discourse on Twitter” dataset.
+The objective of this project is first to detect potential misinformation by training on the “PHEME Rumour and Stance Classification Dataset”. Then we will link this data on disinformation with data on ideological polarization, to learn more about the potential relations between the two.
 
 # 1.	Exploratory Analysis of the Dataset :
 We used the PHEME Rumour and Stance Classification Dataset for training.
@@ -23,7 +23,7 @@ The class distribution is imbalanced here because there are a lot more true twee
 The tweets’ lengths are mostly between 120 and 140 characters for both class (true and misinformation). 
 The most common words are “Ferguson”, “Sydney”, “police” for the tweets about true stories and “War”, “Parliament”, “reports”, for the tweets spreading misinformation. (picture of the words clouds ?)
 
-Our initial hypothesis is that misinformative tweets are related to a more extreme political view (and a more negative sentiment ?).
+Our initial hypothesis is that misinformative tweets are related to a more extreme political view and a more negative sentiment, but also that it deepen divides between communities, as people tends to look for information that they already agree with. It reinforce preexisting beliefs.
 
 # 2.	Text Vector Representations :
 We split the data into Train/Val/Test (70/15/15), and compared three strategies :
@@ -79,4 +79,9 @@ The model mostly classify the tweet as misinformation or not according to the re
 
 # Conclusions :
 
-links between polarization and misinformation
+For our dataset, the choice of text representation has a much larger impact than the choice of classifier. Our dataset is unbalanced in favor of truthful information, it makes misinformation easily misclassified as true and limit the performance of the classification.
+
+Moreover, we saw that text-only features are insufficient to robustly detect misinformation, adding stance distribution for example can help to better detect misinformation. Stance distribution helps also to see the relation between ideological polarization and disinformation. 
+
+Indeed, even though a tweet is spreading misinformation the majority of the replies are still supporting the claim. It proves that our hypothesis was true. The users are looking for information that they agree with, so it reinforce their beliefs and widen the gap between political parties. Furthermore, the performance of the TF-IDF models (especially compared to the transformers’ performance) shows that highly characteristic lexical markers are often reused within the categories. So, misinformation tends to circulate in clusters where linguistic behaviour is more homogeneous, as in the polarized communities.
+
