@@ -102,30 +102,48 @@ We split the data into **train / validation / test** sets with a **70 / 15 / 15*
 
 ---
 
-## 3. Models and Evaluation
+## 3. Models, Evaluation and Results
 
-For each of the three text representations (TF–IDF, Word2Vec, BERT embeddings), we train and evaluate the following models:
+We compare several classifiers built on top of the three main text
+representations (TF–IDF, Word2Vec, BERT embeddings), and we also include an
+end-to-end **DistilBERT** model trained directly on raw text.
+
+The models are:
 
 - **Linear SVM (LinearSVC, Scikit-learn)**  
-  A linear Support Vector Machine finds a hyperplane that maximally separates the two classes in feature space. It is:
+  A linear Support Vector Machine that finds a hyperplane separating the two
+  classes in feature space. It is:
   - Well suited to **high-dimensional sparse features** like TF–IDF.
   - Robust and usually a strong baseline for text classification.
 
 - **Logistic Regression (Scikit-learn)**  
-  Logistic Regression estimates the probability that an input belongs to the positive class using the logistic function. It is:
+  Logistic Regression estimates the probability that an input belongs to the
+  positive class using the logistic function. It is:
   - Simple, fast and easy to interpret.
-  - A strong **linear baseline** that often performs surprisingly well with good features.
+  - A strong **linear baseline** that often performs surprisingly well with
+    good features.
 
 - **MLP (PyTorch)**  
-  A Multi-Layer Perceptron is a feed-forward neural network with:
-  - One hidden layer with non-linear activations, allowing it to learn **non-linear decision boundaries**.
-  - More flexibility to capture complex patterns than linear models, at the cost of:
-    - Higher computational cost.
-    - Greater risk of overfitting if not properly regularized.
+  A feed-forward neural network with one hidden layer and non-linear
+  activations, which can learn **non-linear decision boundaries** on top of
+  the input representation. Compared to linear models, it:
+  - Has more flexibility to capture complex patterns.
+  - Requires more computation and careful regularisation to avoid overfitting.
 
-We use **accuracy** and **macro F1-score** to evaluate our models. Macro F1 gives equal weight to both classes and is therefore more informative than accuracy under class imbalance.
+- **DistilBERT fine-tuned (Hugging Face Transformers)**  
+  A lightweight Transformer pretrained on large text corpora and **fine-tuned**
+  on our dataset for binary classification (misinformation vs. true). Unlike
+  the other models, which operate on pre-computed features, DistilBERT:
+  - Takes **raw tokenised text** as input.
+  - Learns task-specific parameters via gradient descent.
+  - Captures deep contextual information at the cost of higher computational
+    complexity.
 
-### Results
+We evaluate all models using **accuracy** and **macro F1-score**. Macro F1
+gives equal weight to both classes and is therefore more informative than
+accuracy under class imbalance.
+
+### Test results
 
 The final test results for all model–representation combinations are:
 
@@ -147,54 +165,44 @@ representations. With **TF–IDF** features, all three models (Logistic
 Regression, LinearSVC and MLP) perform very well, with the best configuration
 being **TF–IDF + MLP**, which reaches a **test accuracy of 0.846** and a
 **macro F1 of 0.705**. The linear models on TF–IDF (Logistic Regression and
-LinearSVC) also obtain strong scores of **0.834** accuracy and **0.671** macro F1.
+LinearSVC) also obtain strong scores of **0.834** accuracy and **0.671** macro
+F1.
 
 The **DistilBERT fine-tuned** model on raw text achieves a competitive
-**0.817** test accuracy and **0.617** macro F1, matching the performance of
-the best BERT-based and Word2Vec-based MLPs, but still below the top TF–IDF
-setup. Frozen **BERT embeddings** combined with classical models reach around
-**0.796** accuracy and **0.598** macro F1, while **Word2Vec** is generally the
-weakest representation for linear models: its LinearSVC and Logistic
-Regression variants stay in the **0.58–0.69** accuracy range with F1 around
-**0.45–0.52**. Only when combined with an MLP does Word2Vec approach the
-performance of the contextual and transformer-based models.
-
----
-
-## 4. Hyperparameter Tuning and Model Selection
-
-In addition to the classical models above, we fine-tune a **DistilBERT** model (Hugging Face Transformers):
-
-- DistilBERT is a **lighter Transformer** pretrained on large text corpora.
-- We fine-tune it directly on our dataset for **binary classification (misinformation vs. true)**.
-- This end-to-end model:
-  - Captures deep contextual information.
-  - Adapts its weights to the specific properties of our tweets.
-  - Comes with a **higher computational cost** than the linear baselines.
-
+**0.817** test accuracy and **0.617** macro F1, matching the performance of the
+best BERT-based and Word2Vec-based MLPs, but still below the top TF–IDF setup.
+Frozen **BERT embeddings** combined with classical models reach around **0.796**
+accuracy and **0.598** macro F1, while **Word2Vec** is generally the weakest
+representation for linear models: its LinearSVC and Logistic Regression
+variants stay in the **0.58–0.69** accuracy range with F1 around **0.45–0.52**.
+Only when combined with an MLP does Word2Vec approach the performance of the
+contextual and transformer-based models.
 
 ### Representation vs. model: what matters more?
 
 The experiments show that:
 
-- **Performance differences between models (SVM, Logistic Regression, MLP)** are relatively small **when the representation is fixed**.
-- In contrast, **changing the representation** (TF–IDF vs. Word2Vec vs. BERT vs. raw text with DistilBERT) has a **much larger impact** on performance.
+- **Performance differences between classifiers (SVM, Logistic Regression, MLP)**
+  are relatively small **when the representation is fixed**.
+- In contrast, **changing the representation** (TF–IDF vs. Word2Vec vs. BERT
+  embeddings vs. raw text with DistilBERT) has a **much larger impact** on
+  performance.
 
 In particular:
 
-- **Word2Vec** is clearly the **weakest representation for linear models**.  
+- **Word2Vec** is clearly the weakest representation for linear models.  
   Averaging word embeddings over the tweet discards **word order** and subtle
-  cues such as negations (e.g., “rumour” vs. “non-rumour”), which are crucial
-  to this task. With an MLP, Word2Vec becomes competitive, but it does not
-  surpass the best TF–IDF configurations.
+  cues such as negations (e.g. “rumour” vs. “non-rumour”), which are crucial
+  to this task. With an MLP, Word2Vec becomes competitive, but it still does
+  not surpass the best TF–IDF configurations.
 
 - **TF–IDF** achieves the best overall performance in our setting.  
   With TF–IDF, all three models (Logistic Regression, LinearSVC and MLP)
   achieve strong results, and the **TF–IDF + MLP** combination clearly
   dominates with **0.846** accuracy and **0.705** macro F1. This is noticeably
   higher than the scores obtained with DistilBERT fine-tuned and with frozen
-  BERT embeddings. The results show that, for this dataset, a relatively simple
-  lexical representation can be extremely effective when combined with a
+  BERT embeddings. The results show that, for this dataset, a relatively
+  simple lexical representation can be extremely effective when combined with a
   well-regularised classifier.
 
 - **BERT embeddings and DistilBERT fine-tuned** still achieve strong results.  
@@ -208,11 +216,12 @@ In particular:
 Based on these observations, our final choice for the main classifier is:
 
 - **Representation:** TF–IDF  
-- **Model:** MLP (it yields the best macro F1 and accuracy while remaining relatively efficient).
+- **Model:** MLP (it yields the best macro F1 and accuracy while remaining
+  relatively efficient).
 
 ---
 
-## Extension Work: Rule-based Misinformation Detection
+## 4. Extension Work: Rule-based Misinformation Detection
 
 Motivated by the strong performance of TF–IDF, we explored a **very simple rule-based classifier**, inspired by the idea of a “misinformation lexicon”:
 
@@ -248,7 +257,7 @@ to capture complex patterns** in the data.
 
 ---
 
-## Conclusions
+## 5. Conclusions
 
 Our main findings can be summarised as follows:
 
