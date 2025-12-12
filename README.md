@@ -237,10 +237,11 @@ Motivated by the strong performance of TF–IDF, we explored a **very simple rul
 
 We obtain the following results:
 
-<img width="1527" height="761" alt="image" src="https://github.com/user-attachments/assets/495b6166-040b-4304-9aa9-1c45e621da17" />
+<img width="1189" height="589" alt="image" src="https://github.com/user-attachments/assets/7de4f803-8785-4e9f-9461-2dd177d2ffda" />
 
-<img width="1189" height="590" alt="image" src="https://github.com/user-attachments/assets/930fe0db-9f83-40ec-8060-5fe723669c65" />
+<img width="1189" height="589" alt="image" src="https://github.com/user-attachments/assets/151d901f-e77e-44f8-a8d6-5c92757cc5e4" />
 
+The baseline indicates the value for the rule-based classifier.
 
 Those results are quite solid for a rule-based classifier, especially considering that:
 
