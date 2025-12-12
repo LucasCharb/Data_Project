@@ -127,19 +127,37 @@ We use **accuracy** and **macro F1-score** to evaluate our models. Macro F1 give
 
 ### Results
 
-A summary of the results for the different model–representation combinations is shown below:
+The final test results for all model–representation combinations are:
 
-<img width="650" height="400" alt="image" src="https://github.com/user-attachments/assets/1563caac-e90c-4d2a-a9ac-32910ed96f72" />
+| Representation        | Model                 | Test Accuracy | Test F1 |
+|-----------------------|-----------------------|---------------|---------|
+| **BERT embeddings**   | LinearSVC             | 0.796         | 0.598   |
+|                       | LogisticRegression    | 0.796         | 0.598   |
+|                       | MLP (PyTorch)         | 0.817         | 0.617   |
+| **Raw text (tokens)** | DistilBERT fine-tuned | 0.817         | 0.617   |
+| **TF–IDF**            | LinearSVC             | 0.834         | 0.671   |
+|                       | LogisticRegression    | 0.834         | 0.671   |
+|                       | **MLP (PyTorch)**     | **0.846**     | **0.705** |
+| **Word2Vec**          | LinearSVC             | 0.583         | 0.452   |
+|                       | LogisticRegression    | 0.689         | 0.519   |
+|                       | MLP (PyTorch)         | 0.817         | 0.617   |
 
-Overall, the results are consistent and show clear differences between
+Overall, the results are consistent and highlight clear differences between
 representations. With **TF–IDF** features, all three models (Logistic
-Regression, LinearSVC and MLP) reach a **test accuracy of about 0.834** and a
-**macro F1 around 0.671**, which are the best scores in our experiments.
-DistilBERT fine-tuned on raw text achieves a very competitive **0.828** test
-accuracy and **0.654** macro F1, slightly below the TF–IDF setups. BERT
-embeddings (frozen) obtain around **0.796** accuracy and **0.598** macro F1,
-and Word2Vec is clearly the weakest representation, with test accuracy between
-**0.56–0.69** and macro F1 in the **0.44–0.53** range depending on the classifier.
+Regression, LinearSVC and MLP) perform very well, with the best configuration
+being **TF–IDF + MLP**, which reaches a **test accuracy of 0.846** and a
+**macro F1 of 0.705**. The linear models on TF–IDF (Logistic Regression and
+LinearSVC) also obtain strong scores of **0.834** accuracy and **0.671** macro F1.
+
+The **DistilBERT fine-tuned** model on raw text achieves a competitive
+**0.817** test accuracy and **0.617** macro F1, matching the performance of
+the best BERT-based and Word2Vec-based MLPs, but still below the top TF–IDF
+setup. Frozen **BERT embeddings** combined with classical models reach around
+**0.796** accuracy and **0.598** macro F1, while **Word2Vec** is generally the
+weakest representation for linear models: its LinearSVC and Logistic
+Regression variants stay in the **0.58–0.69** accuracy range with F1 around
+**0.45–0.52**. Only when combined with an MLP does Word2Vec approach the
+performance of the contextual and transformer-based models.
 
 ---
 
@@ -165,34 +183,37 @@ Illustrative training logs and evaluation curves:
 The experiments show that:
 
 - **Performance differences between models (SVM, Logistic Regression, MLP)** are relatively small **when the representation is fixed**.
-- In contrast, **changing the representation** (TF–IDF vs. Word2Vec vs. BERT) has a **much larger impact** on performance.
+- In contrast, **changing the representation** (TF–IDF vs. Word2Vec vs. BERT vs. raw text with DistilBERT) has a **much larger impact** on performance.
 
 In particular:
 
-- **Word2Vec** is clearly the **weakest representation** in our setting.  
-  A plausible reason is that averaging word embeddings over the tweet discards
-  **word order** and subtle cues such as negations (e.g., “rumour” vs.
-  “non-rumour”), which are crucial to this task.
+- **Word2Vec** is clearly the **weakest representation for linear models**.  
+  Averaging word embeddings over the tweet discards **word order** and subtle
+  cues such as negations (e.g., “rumour” vs. “non-rumour”), which are crucial
+  to this task. With an MLP, Word2Vec becomes competitive, but it does not
+  surpass the best TF–IDF configurations.
 
 - **TF–IDF** achieves the best overall performance in our setting.  
   With TF–IDF, all three models (Logistic Regression, LinearSVC and MLP)
-  achieve a test accuracy of approximately **0.834** and macro F1 around
-  **0.671**. This is slightly higher than the scores obtained with DistilBERT
-  fine-tuned on raw text (**0.828** accuracy and **0.654** F1) and noticeably
-  higher than those with frozen BERT embeddings and Word2Vec. This shows that,
-  for this dataset, a relatively simple lexical representation can be extremely
-  effective when combined with a well-regularised classifier.
+  achieve strong results, and the **TF–IDF + MLP** combination clearly
+  dominates with **0.846** accuracy and **0.705** macro F1. This is noticeably
+  higher than the scores obtained with DistilBERT fine-tuned and with frozen
+  BERT embeddings. The results show that, for this dataset, a relatively simple
+  lexical representation can be extremely effective when combined with a
+  well-regularised classifier.
 
 - **BERT embeddings and DistilBERT fine-tuned** still achieve strong results.  
-  The fine-tuned DistilBERT model is the **second-best system overall**, only
-  slightly behind the TF–IDF models. This confirms that transformer-based
-  architectures are powerful general-purpose text classifiers, but in this
-  specific dataset they do not clearly outperform the best TF–IDF setups.
+  The fine-tuned DistilBERT model is among the top-performing systems, very
+  close to the best BERT/Word2Vec MLPs, but it does not clearly outperform the
+  strongest TF–IDF models. This confirms that transformer-based architectures
+  are powerful general-purpose text classifiers, but in this specific dataset
+  they do not provide a decisive advantage over simpler, bag-of-words-based
+  representations.
 
 Based on these observations, our final choice for the main classifier is:
 
 - **Representation:** TF–IDF  
-- **Model:** MLP (slightly better macro F1 than the other TF–IDF models, while still relatively efficient).
+- **Model:** MLP (it yields the best macro F1 and accuracy while remaining relatively efficient).
 
 ---
 
@@ -235,9 +256,10 @@ Our main findings can be summarised as follows:
 
 1. **Representation is more crucial than the choice of classifier.**  
    For this dataset, the difference between TF–IDF, Word2Vec and BERT
-   embeddings is much larger than the difference between Logistic Regression,
-   Linear SVM and MLP when using the same representation. TF–IDF, despite its
-   simplicity, turns out to be the most effective representation.
+   embeddings (or raw text for DistilBERT) is much larger than the difference
+   between Logistic Regression, Linear SVM and MLP when using the same
+   representation. TF–IDF, despite its simplicity, turns out to be the most
+   effective representation.
 
 2. **Class imbalance and label noise limit performance.**  
    The dataset contains many more true than misinformative tweets. As a result,
