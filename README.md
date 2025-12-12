@@ -1,7 +1,7 @@
 # Data_Project  
 ## Analysis of Ideological Polarization and Disinformation on Social Networks
 
-**Team members:** *Inès Menchero Garcia, Patricia Lidia Sanchez Rodriguez, Lucas Charbonnier, Ambre Bissiriex.*
+**Team members:** *Inés Menchero Garcia, Patricia Lidia Sanchez Rodriguez, Lucas Charbonnier, Ambre Bissiriex.*
 
 The goal of this project is twofold:
 
@@ -172,11 +172,6 @@ In addition to the classical models above, we fine-tune a **DistilBERT** model (
   - Adapts its weights to the specific properties of our tweets.
   - Comes with a **higher computational cost** than the linear baselines.
 
-Illustrative training logs and evaluation curves:
-
-<img width="1527" height="761" alt="image" src="https://github.com/user-attachments/assets/495b6166-040b-4304-9aa9-1c45e621da17" />
-
-<img width="1189" height="590" alt="image" src="https://github.com/user-attachments/assets/930fe0db-9f83-40ec-8060-5fe723669c65" />
 
 ### Representation vs. model: what matters more?
 
@@ -233,7 +228,10 @@ Motivated by the strong performance of TF–IDF, we explored a **very simple rul
 
 We obtain the following results:
 
-<img width="945" height="469" alt="image" src="https://github.com/user-attachments/assets/d96250f7-ef7a-4deb-b1eb-1f514363b3c8" />
+<img width="1527" height="761" alt="image" src="https://github.com/user-attachments/assets/495b6166-040b-4304-9aa9-1c45e621da17" />
+
+<img width="1189" height="590" alt="image" src="https://github.com/user-attachments/assets/930fe0db-9f83-40ec-8060-5fe723669c65" />
+
 
 Those results are quite solid for a rule-based classifier, especially considering that:
 
