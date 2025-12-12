@@ -1,87 +1,275 @@
-# Data_Project
-# Analysis of Ideological Polarization and Disinformation on Social Networks
+# Data_Project  
+## Analysis of Ideological Polarization and Disinformation on Social Networks
 
-Team members : *Inès Menchero Garcia, Patricia Lidia Sanchez Rodriguez, Lucas Charbonnier, Ambre Bissiriex.*
+**Team members:** *Inès Menchero Garcia, Patricia Lidia Sanchez Rodriguez, Lucas Charbonnier, Ambre Bissiriex.*
 
-The objective of this project is first to detect potential misinformation by training on the “PHEME Rumour and Stance Classification Dataset”. Then we will link this data on disinformation with data on ideological polarization, to learn more about the potential relations between the two.
+The goal of this project is twofold:
 
-# 1.	Exploratory Analysis of the Dataset :
-We used the PHEME Rumour and Stance Classification Dataset for training.
-This dataset is made of 297 tweets and 4263 comments/reply tweets, for a total of 4560 entries. Each entry represents a tweet (text) annotated with metadata fields including event (the associated incident), threadid and tweetid (unique identifiers linking tweets to conversation threads), support (indicating whether the tweet supports, denies, or is neutral toward the claim), evidentiality (the type of evidence cited, such as a URL, quoted source, or witness account), and certainty (the annotator’s confidence level, e.g., certain, somewhat-certain, or uncertain). 
+1. **Detect potential misinformation** by training supervised models on the *PHEME Rumour and Stance Classification Dataset*.  
+2. **Relate misinformation to ideological polarization**, using additional data on stance and network structure to study how false claims spread and how they are received by different communities.
 
-The reply tweets include responsetype-vs-source and responsetype-vs-previous describing the nature of a reply (e.g., comment, agreed, disagreed, or appeal-for-more-information). This dataset is designed for studying rumor verification, stance detection, and information credibility across social media discussions.
+---
 
-Concerning the metadata on disinformation, there are the columns is_rumour (rumour or non-rumour), category (the topic of the tweet), misinformation (0 if the topic was later proven true, 1 if it was misinformation), and links (a list of links/url that covered the topic).
-An example of an entry :
+## 1. Exploratory Analysis of the Dataset
+
+We use the **PHEME Rumour and Stance Classification Dataset** as our main source of annotated data. It consists of:
+
+- **297 source tweets**  
+- **4,263 reply tweets**  
+- **4,560 tweets in total**
+
+Each row corresponds to a tweet (either source or reply) and includes:
+
+- **Text fields**: the tweet text itself.  
+- **Conversation structure**:  
+  - `event`: the real-world incident the tweet refers to  
+  - `threadid`, `tweetid`: identifiers linking tweets into conversation threads  
+- **Stance-related annotations**:  
+  - `support`: whether the tweet *supports*, *denies*, *queries*, or is *neutral* towards the main claim  
+  - `evidentiality`: whether evidence is provided (URL, quoted source, reported speech, etc.)  
+  - `certainty`: annotators’ perceived certainty (e.g., *certain*, *somewhat-certain*, *uncertain*)  
+
+For reply tweets, we also have:
+
+- `responsetype-vs-source` and `responsetype-vs-previous`, describing the nature of the reply (e.g., *comment*, *agree*, *disagree*, *appeal-for-more-information*).
+
+These annotations make the dataset suitable for **rumour verification, stance detection and credibility analysis**.
+
+On top of this, we focus on metadata related to (mis)information:
+
+- `is_rumour`: distinguishes rumour vs. non-rumour  
+- `category`: topic of the story (e.g., *Ferguson*, *Sydney siege*, …)  
+- `misinformation`:  
+  - `0` if the story was later verified as **true**  
+  - `1` if the story turned out to be **misinformation**  
+- `links`: external URLs that reported the story, often pointing to news outlets or blogs
+
+An example of an entry:
+
 <img width="1082" height="211" alt="image" src="https://github.com/user-attachments/assets/a18215b3-9bc5-49ac-8209-c397023eff64" />
 
+For some events the `misinformation` label is missing. Since we cannot use unlabeled instances for supervised learning, we **remove these rows** from our experiments.
 
+### Class distribution and basic statistics
 
-For some entries the misinformation value was missing so we removed them because they weren’t useful for our study.
+- The **class distribution is imbalanced**: there are many more *true* stories than *misinformation* stories. This makes misinformative tweets more likely to be misclassified as true.
+- Tweet lengths are mostly between **120 and 140 characters** for both classes (true vs. misinformation).
+- A quick lexical analysis shows that:
+  - In **true stories**, the most frequent keywords include *“Ferguson”*, *“Sydney”*, *“police”*.
+  - In **misinformative stories**, typical words include *“war”*, *“parliament”*, *“reports”*, etc.  
+  These patterns are consistent with the different events covered in the dataset.
 
-The class distribution is imbalanced here because there are a lot more true tweets than misinformation tweets.
-The tweets’ lengths are mostly between 120 and 140 characters for both class (true and misinformation). 
-The most common words are “Ferguson”, “Sydney”, “police” for the tweets about true stories and “War”, “Parliament”, “reports”, for the tweets spreading misinformation. (picture of the words clouds ?)
+*(Here we could include word clouds to illustrate the most frequent tokens in each class.)*
 
-Our initial hypothesis is that misinformative tweets are related to a more extreme political view and a more negative sentiment, but also that it deepen divides between communities, as people tends to look for information that they already agree with. It reinforce preexisting beliefs.
+### Initial hypothesis
 
-# 2.	Text Vector Representations :
-We split the data into Train/Val/Test (70/15/15), and compared three strategies :
+Our starting hypothesis is that misinformative tweets:
 
- •	TF-IDF (Scikit-learn) : mesure the importance of a word by how often it appear (TF = Term Frequency = how often a word appears in a document, IDF = Inverse Document Frequency = how rare the word is across all documents). The main advantage of this representation is that it is simple and fast.
+- Tend to be associated with **more extreme political views** and **more negative sentiment**.
+- Are embedded in **echo chambers** where users preferentially consume information consistent with their prior beliefs.
+- May **reinforce and amplify pre-existing ideological divisions** between communities.
 
- •	Word2Vec (Gensim) : words that appear in similar contexts get similar vectors. The main benefit is that it captures semantic meaning and analogies.
+The rest of the project is structured to test these ideas, focusing first on **text-based detection of misinformation**, and then on how this relates to **stance and polarization**.
 
- •	DistilBERT (contextual embeddings, Hugging Face Transformers) : it uses a transformer model to produce contextual embeddings. So, the meaning of a word depends on the sentence around it. The advantage is that it captures both syntax and semantics but it is heavier to run.
+---
 
-# 3.	Models and evaluation :
+## 2. Text Vector Representations
 
-We implemented and compared, with each of the three representations, the following models :
+We split the data into **train / validation / test** sets with a **70 / 15 / 15** ratio and compare three main strategies for encoding tweet text:
 
- •	Linear SVM (LinearSVC) : finds a "line" that best separates classes
- 
- •	Logistic Regression (Scikit-learn) : estimates the probability that an input belongs to a class, using the logistic function. It is less heavy to run than the other models.
- 
- •	MLP (PyTorch) : it is a feedforward neural network. It has nonlinear activations to learn complex patterns. It's a more flexible model, it can capture complex patterns but needs more data and tuning.
+1. **TF–IDF (Scikit-learn)**  
+   TF–IDF measures the importance of a word based on:
+   - **TF (Term Frequency)**: how often the word appears in a tweet.
+   - **IDF (Inverse Document Frequency)**: how rare the word is across all tweets.
+   
+   This yields **sparse, high-dimensional vectors**, but the method is:
+   - Simple and fast to compute.
+   - Very effective at highlighting **discriminative tokens** (hashtags, names, rare keywords).
 
-We used accuracy_score and f1_score to evaluate our models.
-Results :
+2. **Word2Vec (Gensim)**  
+   Word2Vec learns **dense vector embeddings** where words that appear in similar contexts obtain similar vectors. The main advantages are:
+   - Captures **semantic similarity** and analogies.
+   - Produces compact numeric representations that can be averaged to represent full tweets.
+
+   However, simple averaging of word embeddings loses **word order** and subtle compositional effects, which can be problematic for tasks where negation or local context matter.
+
+3. **BERT-based contextual embeddings (Hugging Face Transformers)**  
+   We also use **contextual embeddings** derived from a pre-trained Transformer (e.g., BERT/DistilBERT) with **frozen weights**:
+   - Each tweet is encoded into a dense vector that depends on the surrounding context.
+   - This representation captures both **syntax and semantics**, going beyond bag-of-words.
+
+   The trade-off is that this approach is **computationally heavier**, but it typically yields more informative features than TF–IDF or Word2Vec in many NLP tasks.
+
+---
+
+## 3. Models and Evaluation
+
+For each of the three text representations (TF–IDF, Word2Vec, BERT embeddings), we train and evaluate the following models:
+
+- **Linear SVM (LinearSVC, Scikit-learn)**  
+  A linear Support Vector Machine finds a hyperplane that maximally separates the two classes in feature space. It is:
+  - Well suited to **high-dimensional sparse features** like TF–IDF.
+  - Robust and usually a strong baseline for text classification.
+
+- **Logistic Regression (Scikit-learn)**  
+  Logistic Regression estimates the probability that an input belongs to the positive class using the logistic function. It is:
+  - Simple, fast and easy to interpret.
+  - A strong **linear baseline** that often performs surprisingly well with good features.
+
+- **MLP (PyTorch)**  
+  A Multi-Layer Perceptron is a feed-forward neural network with:
+  - One hidden layer with non-linear activations, allowing it to learn **non-linear decision boundaries**.
+  - More flexibility to capture complex patterns than linear models, at the cost of:
+    - Higher computational cost.
+    - Greater risk of overfitting if not properly regularized.
+
+We use **accuracy** and **macro F1-score** to evaluate our models. Macro F1 gives equal weight to both classes and is therefore more informative than accuracy under class imbalance.
+
+### Results
+
+A summary of the results for the different model–representation combinations is shown below:
+
 <img width="650" height="400" alt="image" src="https://github.com/user-attachments/assets/1563caac-e90c-4d2a-a9ac-32910ed96f72" />
 
-The results appear to be correct, with values around 0.7-0.8 for the accuracy_score and lower values for the f1_score.
+Overall, the results are consistent and show clear differences between
+representations. With **TF–IDF** features, all three models (Logistic
+Regression, LinearSVC and MLP) reach a **test accuracy of about 0.834** and a
+**macro F1 around 0.671**, which are the best scores in our experiments.
+DistilBERT fine-tuned on raw text achieves a very competitive **0.828** test
+accuracy and **0.654** macro F1, slightly below the TF–IDF setups. BERT
+embeddings (frozen) obtain around **0.796** accuracy and **0.598** macro F1,
+and Word2Vec is clearly the weakest representation, with test accuracy between
+**0.56–0.69** and macro F1 in the **0.44–0.53** range depending on the classifier.
 
-# 4.	Hyperparameter tuning and model selection :
+---
 
-DistilBERT fine-tuned (Hugging Face) : it is a transformer model trained on large text corpora, then fine‑tuned for a specific task, here classify misinformation. It understand the context deeply and the fine tuning adapt the model to the specific task and to the dataset. It's a more complex model that has a heavy computational cost.
- <img width="1527" height="761" alt="image" src="https://github.com/user-attachments/assets/495b6166-040b-4304-9aa9-1c45e621da17" />
+## 4. Hyperparameter Tuning and Model Selection
 
- <img width="1189" height="590" alt="image" src="https://github.com/user-attachments/assets/930fe0db-9f83-40ec-8060-5fe723669c65" />
+In addition to the classical models above, we fine-tune a **DistilBERT** model (Hugging Face Transformers):
 
+- DistilBERT is a **lighter Transformer** pretrained on large text corpora.
+- We fine-tune it directly on our dataset for **binary classification (misinformation vs. true)**.
+- This end-to-end model:
+  - Captures deep contextual information.
+  - Adapts its weights to the specific properties of our tweets.
+  - Comes with a **higher computational cost** than the linear baselines.
 
-We can see that the results don't change much between the models but change between the reprsentations. So the text representation matter more here than the model choice.
+Illustrative training logs and evaluation curves:
 
-Word2Vec is the worst representation in our case, maybe because it can't take into account word-order information like the negations (it can't tell the difference between "rumour" and "non rumour" for example).
+<img width="1527" height="761" alt="image" src="https://github.com/user-attachments/assets/495b6166-040b-4304-9aa9-1c45e621da17" />
 
-Then, surprisingly the TF-IDF representation has better results than the BERT one and even better than the fine-tuning one. In the TF-IDF representation, words that are frequent in a tweet but rare in the general dataset are given a high weight. So, this representation captures discriminating words (hashtags, proper names, ...) well, even if it ignores context. In this dataset the tweets that support a story (category) have most of the time hashtags or names in common. So when the category is proven to be misinformation, the discriminating words are the most helpful to categorize the tweets. Looking at the stance, the propotion of replies deniying a tweet can help improve the performance. Indeed, when a tweet is misinformative the proportion of denying replies quadruples.
+<img width="1189" height="590" alt="image" src="https://github.com/user-attachments/assets/930fe0db-9f83-40ec-8060-5fe723669c65" />
 
-So, our chosen representation is **TF-IDF** and for our classification we choose the **MLP**, because it has a slightly better f1-score.
+### Representation vs. model: what matters more?
 
-# Extension Work :
+The experiments show that:
 
-After the surprising performance of the TF-IDF representation, we thought of building a simple model classifying the tweets as misinformative if they contained too much words associated with the “misinformative lexicon”. So, we created lists of words related to misinformation, and lists of links associated to unreliable websites. Then, if the tweet contains words from those lists a penalty is added and when the total score exceeds a predetermined threshold, the tweet is classified as disinformation. This strategy will help to determined to what extend this “misinformative lexicon” is the key to identify misinformative tweets.
-We obtain the following results :
-<img width="945" height="469" alt="image" src="https://github.com/user-attachments/assets/d96250f7-ef7a-4deb-b1eb-1b514363b3c8" />
+- **Performance differences between models (SVM, Logistic Regression, MLP)** are relatively small **when the representation is fixed**.
+- In contrast, **changing the representation** (TF–IDF vs. Word2Vec vs. BERT) has a **much larger impact** on performance.
 
-Those results are quite solid for a rule-based classifier. Moreover, the dataset is imbalanced and noisy, so those results demonstrate that this rule is a good way to figure out if a tweet is misinformation or not.
+In particular:
 
-The model mostly classify the tweet as misinformation or not according to the reliability of the links and not as much according to the lexicon. This is also our reflex as humans, to determine if a news is trustworthy we look for the sources. So it’s a good indicator, although the results are still lower than for most of the models trained before. Supervised learning stays the best way to predict data patterns.
+- **Word2Vec** is clearly the **weakest representation** in our setting.  
+  A plausible reason is that averaging word embeddings over the tweet discards
+  **word order** and subtle cues such as negations (e.g., “rumour” vs.
+  “non-rumour”), which are crucial to this task.
 
+- **TF–IDF** achieves the best overall performance in our setting.  
+  With TF–IDF, all three models (Logistic Regression, LinearSVC and MLP)
+  achieve a test accuracy of approximately **0.834** and macro F1 around
+  **0.671**. This is slightly higher than the scores obtained with DistilBERT
+  fine-tuned on raw text (**0.828** accuracy and **0.654** F1) and noticeably
+  higher than those with frozen BERT embeddings and Word2Vec. This shows that,
+  for this dataset, a relatively simple lexical representation can be extremely
+  effective when combined with a well-regularised classifier.
 
-# Conclusions :
+- **BERT embeddings and DistilBERT fine-tuned** still achieve strong results.  
+  The fine-tuned DistilBERT model is the **second-best system overall**, only
+  slightly behind the TF–IDF models. This confirms that transformer-based
+  architectures are powerful general-purpose text classifiers, but in this
+  specific dataset they do not clearly outperform the best TF–IDF setups.
 
-For our dataset, the choice of text representation has a much larger impact than the choice of classifier. Our dataset is unbalanced in favor of truthful information, it makes misinformation easily misclassified as true and limit the performance of the classification.
+Based on these observations, our final choice for the main classifier is:
 
-Moreover, we saw that text-only features are insufficient to robustly detect misinformation, adding stance distribution for example can help to better detect misinformation. Stance distribution helps also to see the relation between ideological polarization and disinformation. 
+- **Representation:** TF–IDF  
+- **Model:** MLP (slightly better macro F1 than the other TF–IDF models, while still relatively efficient).
 
-Indeed, even though a tweet is spreading misinformation the majority of the replies are still supporting the claim. It proves that our hypothesis was true. The users are looking for information that they agree with, so it reinforce their beliefs and widen the gap between political parties. Furthermore, the performance of the TF-IDF models (especially compared to the transformers’ performance) shows that highly characteristic lexical markers are often reused within the categories. So, misinformation tends to circulate in clusters where linguistic behaviour is more homogeneous, as in the polarized communities.
+---
 
+## Extension Work: Rule-based Misinformation Detection
+
+Motivated by the strong performance of TF–IDF, we explored a **very simple rule-based classifier**, inspired by the idea of a “misinformation lexicon”:
+
+1. We manually constructed:
+   - A list of words and expressions frequently associated with misinformation.
+   - A list of domains and URLs corresponding to **unreliable** or low-credibility sources.
+
+2. For each tweet, we computed a **score** based on:
+   - The presence of lexicon items in the text.
+   - The presence of **unreliable links** in the URL list.
+
+3. If the score exceeded a fixed threshold, the tweet was classified as **misinformation**; otherwise as **true**.
+
+We obtain the following results:
+
+<img width="945" height="469" alt="image" src="https://github.com/user-attachments/assets/d96250f7-ef7a-4deb-b1eb-1f514363b3c8" />
+
+Those results are quite solid for a rule-based classifier, especially considering that:
+
+- The dataset is noisy and class-imbalanced.
+- The classifier is based only on a hand-crafted lexicon and link heuristics.
+
+The model mostly classifies tweets as misinformation or not according to the
+**reliability of the links**, and less according to the lexicon itself. This is
+similar to our own behaviour as humans: to decide whether a piece of news is
+trustworthy, we often **look at the sources first**. The indicator is useful,
+although the results are still lower than for most of the supervised models
+trained before. This confirms that **supervised learning remains the best way
+to capture complex patterns** in the data.
+
+---
+
+## Conclusions
+
+Our main findings can be summarised as follows:
+
+1. **Representation is more crucial than the choice of classifier.**  
+   For this dataset, the difference between TF–IDF, Word2Vec and BERT
+   embeddings is much larger than the difference between Logistic Regression,
+   Linear SVM and MLP when using the same representation. TF–IDF, despite its
+   simplicity, turns out to be the most effective representation.
+
+2. **Class imbalance and label noise limit performance.**  
+   The dataset contains many more true than misinformative tweets. As a result,
+   models often misclassify misinformation as true, and even good accuracy can
+   hide relatively low recall for the minority class.
+
+3. **Text-only features are not sufficient for robust misinformation detection.**  
+   Incorporating additional signals, such as:
+   - **Stance distributions** within a thread (proportion of replies denying vs. supporting the claim),
+   - **Source reliability** (domains of linked URLs),
+   clearly improves our understanding of how misinformation behaves.
+
+   For example, threads linked to misinformation tend to show a **higher
+   proportion of denying replies**, and the same misleading claims recur within
+   particular lexical and topical clusters.
+
+4. **Misinformation and ideological polarization are closely related.**  
+   Even when a tweet is misinformative, the **majority of replies often support
+   the claim**, which supports our initial hypothesis: users tend to seek and
+   amplify information that confirms their existing beliefs. This contributes
+   to:
+   - Stronger **echo chambers**.
+   - Increased **polarisation between communities**.
+
+   The excellent performance of TF–IDF models (especially compared to more
+   complex transformers) suggests that highly characteristic lexical markers
+   are often reused within categories. This indicates that misinformation
+   frequently circulates inside relatively homogeneous, polarized communities
+   where linguistic behaviour is also more uniform.
+
+In summary, the project shows that **simple, well-regularised models with
+carefully chosen representations** can compete with much more complex
+architectures, and that studying both **content** and **interaction patterns**
+is essential for understanding the link between **disinformation** and
+**ideological polarization** on social networks.
